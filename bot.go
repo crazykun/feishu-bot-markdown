@@ -10,7 +10,7 @@ import (
 
 /**
  * @Description: 生成消息卡片
- * 飞书消息卡片结构文档 https://open.feishu.cn/document/common/enterprise-message/card-message
+ * 飞书消息卡片结构文档 https://open.feishu.cn/document/common-capabilities/message-card/message-cards-content/card-structure/card-content
  * 卡片的正文内容，支持配置多语言。卡片的正文内容支持多种模块，包括多列布局、内容模块、分割线、图片、备注、交互模块等。
  * 在卡片的正文内容中，支持添加以下属性：
  * column_set：多列布局，可以横向排布多个列容器，在列内纵向自由组合图文内容，解决多列内容对齐问题，并实现了灵活的图文混排。
