@@ -30,7 +30,7 @@ var TmplTestFeishu = &FeishuMsg{
 	},
 	Note:        "这是备注",
 	Link:        "http://www.baidu.com",
-	HeaderColor: ColorWathet,
+	HeaderColor: bot.ColorWathet,
 }
 
 bot.SendFeishuMsg(Hook, TmplTestFeishu)
