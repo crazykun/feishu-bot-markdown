@@ -157,7 +157,7 @@ const (
 
 type FeishuMsg struct {
 	Title       string         `json:"title"`          // 标题
-	Markdown    map[string]any `json:"contents"`       // 内容
+	Markdown    map[string]any `json:"markdown"`       // 内容
 	Note        string         `json:"note"`           // 备注
 	Link        string         `json:"link,omitempty"` // 链接
 	HeaderColor FeishuColor    `json:"-"`              // 标题颜色
