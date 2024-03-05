@@ -18,7 +18,7 @@ import (
 // 替换自己的机器人地址
 var Hook = "https://open.feishu.cn/open-apis/bot/v2/hook/xxxx-xxxx-xxxx-xxxx"
 
-var TmplTestFeishu = &feishu.FeishuMsg{
+var TmplTestFeishu = &bot.FeishuMsg{
 	Title: "飞书markdown消息测试！",
 	Markdown: map[string]any{
 		"标题": "标题测试",
