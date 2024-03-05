@@ -1,14 +1,10 @@
 # feishu-bot-markdown
 使用飞书群机器人发送markdown消息, 使用飞书群机器人卡片结构, 发送markdown格式, 本项目是对飞书群机器人发送消息的封装, 使得发送消息更加方便
 
-# 截图
-![截图](https://raw.githubusercontent.com/crazykun/feishu-bot-markdown/main/src/screenshot.jpg)
+
 
 # 安装
-go get github.com/crazykun/feishu-bot-markdown
-
-# markdown支持格式
-![截图](https://raw.githubusercontent.com/crazykun/feishu-bot-markdown/main/src/markdown.png)
+`go get github.com/crazykun/feishu-bot-markdown`
 
 
 # 使用
@@ -36,6 +32,16 @@ var TmplTestFeishu = &FeishuMsg{
 SendFeishuMsg(Hook, TmplTestFeishu)
 
 ```
+
+# 截图
+![截图](https://raw.githubusercontent.com/crazykun/feishu-bot-markdown/main/src/screenshot.jpg)
+
+
+
+# markdown支持格式
+![截图](https://raw.githubusercontent.com/crazykun/feishu-bot-markdown/main/src/markdown.png)
+
+
 
 # 飞书文档
 [文档](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot)
