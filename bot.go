@@ -199,7 +199,7 @@ func FormatMsg(f *FeishuMsg) *Msg {
 }
 
 // 发送消息
-func SendFeishuMsg(hook string, f *FeishuMsg) {
+func SendFeishuMsg(hook string, f *FeishuMsg) error {
 	if hook == "" {
 		return
 	}
@@ -215,8 +215,9 @@ func SendFeishuMsg(hook string, f *FeishuMsg) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		defer resp.Body.Close()
+		return err
 	}
+
+	defer resp.Body.Close()
+	return nil
 }
