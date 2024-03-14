@@ -132,6 +132,19 @@ func CreateColumn(align, content string) Column {
 	}
 }
 
+// CreateCenterColumn 构建一个多列布局中的一列并居中
+func CreateCenterColumn(align, content string) Column {
+	return Column{
+		Tag:           "column",
+		Width:         "weighted",
+		Weight:        1,
+		VerticalAlign: align,
+		Elements: []Element{
+			CreateMarkdownCenterElement(content),
+		},
+	}
+}
+
 // Hr 构建一个模块之间的分割线
 func Hr() Element {
 	return Element{
