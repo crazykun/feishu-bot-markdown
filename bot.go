@@ -201,7 +201,7 @@ func FormatMsg(f *FeishuMsg) *Msg {
 // 发送消息
 func SendFeishuMsg(hook string, f *FeishuMsg) error {
 	if hook == "" {
-		return
+		return nil
 	}
 
 	// 将消息内容转换为JSON格式
