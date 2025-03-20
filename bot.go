@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"time"
 )
 
 /**
@@ -170,11 +171,13 @@ const (
 )
 
 type FeishuMsg struct {
-	Title       string         `json:"title"`          // 标题
-	Markdown    map[string]any `json:"markdown"`       // 内容
-	Note        string         `json:"note"`           // 备注
-	Link        string         `json:"link,omitempty"` // 链接
-	HeaderColor FeishuColor    `json:"-"`              // 标题颜色
+	Title       string         `json:"title"`              // 标题
+	Markdown    map[string]any `json:"markdown"`           // 内容
+	Note        string         `json:"note"`               // 备注
+	NoteEmoji   bool           `json:"note_emoji"`         // 是否备注附带随机emoji表情
+	Link        string         `json:"link,omitempty"`     // 链接
+	HeaderColor FeishuColor    `json:"-"`                  // 标题颜色
+	Response    any            `json:"response,omitempty"` // 响应内容
 }
 
 // NewStatMsg 构造一个统计消息卡片
@@ -186,13 +189,18 @@ func FormatMsg(f *FeishuMsg) *Msg {
 	}
 	elements = append(elements, CreateMarkdownElement(md))
 
-	// 添加备注
-	if f.Note != "" {
+	// 默认备注发送时间
+	if f.Note == "" {
+		f.Note = time.Now().Format("2006-01-02 15:04:05")
+	}
+
+	if f.NoteEmoji {
 		// 随机生成一个emoji表情
 		emoji := []string{"👍", "👏", "👌", "👊", "✌", "👋", "👆", "👇", "👈", "👉", "👎", "👓", "👔", "👕", "👖", "👗", "👘", "👙", "👚", "👛", "👜", "👝", "👞", "👟", "👠", "👡", "👢", "👣", "👤", "👥", "👦", "👧", "👨", "👩", "👪", "👫", "👬", "👭", "👮", "👯", "👰", "👱", "👲", "👳", "👴", "👵", "👶", "👷", "👸", "👹", "👺", "👻", "👼", "👽", "👾", "👿", "💀", "💁", "💂", "💃", "💄", "💅", "💆", "💇", "💈", "💉", "💊", "💋", "💌", "💍", "💎", "💏", "💐", "💑", "💒", "💓", "💔", "💕", "💖", "💗", "💘", "💙", "💚", "💛", "💜", "💝", "💞", "💟", "💠", "💡", "💢", "💣", "💤", "💥", "💦", "💧", "💨", "💩", "💪", "💫", "💬", "💭", "💮", "💯", "💰", "💱", "💲", "💳", "💴", "💵"}
 		emojiIndex := rand.Intn(len(emoji))
-		elements = append(elements, CreateNoteElement(emoji[emojiIndex]+f.Note+emoji[emojiIndex]))
+		f.Note = emoji[emojiIndex] + f.Note + emoji[emojiIndex]
 	}
+	elements = append(elements, CreateNoteElement(f.Note))
 
 	return &Msg{
 		MsgType: "interactive",
@@ -233,5 +241,12 @@ func SendFeishuMsg(hook string, f *FeishuMsg) error {
 	}
 
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("request failed with status code %d", resp.StatusCode)
+	}
+
+	buf := new(bytes.Buffer)
+	_, _ = buf.ReadFrom(resp.Body)
+	f.Response = buf.String()
 	return nil
 }
