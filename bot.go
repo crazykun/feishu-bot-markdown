@@ -82,7 +82,7 @@ type Element struct {
 	HorizontalSpacing string    `json:"horizontal_spacing,omitempty"`
 	Columns           []Column  `json:"columns,omitempty"`
 	Actions           []Action  `json:"actions,omitempty"`
-	Elemens           []Element `json:"elements,omitempty"`
+	Elements          []Element `json:"elements,omitempty"`
 }
 
 // CreateMarkdownElement 构建一个 Markdown 元素，用于显示富文本内容
@@ -115,7 +115,7 @@ func CreateTextElement(content string) Element {
 func CreateNoteElement(content string) Element {
 	return Element{
 		Tag: "note",
-		Elemens: []Element{
+		Elements: []Element{
 			CreateTextElement(content),
 		},
 	}
