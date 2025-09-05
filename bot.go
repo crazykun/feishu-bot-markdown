@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -180,27 +181,48 @@ type FeishuMsg struct {
 	Response    any            `json:"response,omitempty"` // 响应内容
 }
 
-// NewStatMsg 构造一个统计消息卡片
-func FormatMsg(f *FeishuMsg) *Msg {
-	var elements []Element
-	md := ""
-	for k, v := range f.Markdown {
-		md += fmt.Sprintf("**%s**：%s\n", k, v)
+// buildMarkdownContent 构建markdown内容字符串
+func (f *FeishuMsg) buildMarkdownContent() string {
+	if len(f.Markdown) == 0 {
+		return ""
 	}
-	elements = append(elements, CreateMarkdownElement(md))
+	
+	var md strings.Builder
+	for k, v := range f.Markdown {
+		md.WriteString(fmt.Sprintf("**%s**：%s\n", k, v))
+	}
+	return md.String()
+}
 
-	// 默认备注发送时间
-	if f.Note == "" {
-		f.Note = time.Now().Format("2006-01-02 15:04:05")
+// buildNoteContent 构建备注内容
+func (f *FeishuMsg) buildNoteContent() string {
+	note := f.Note
+	if note == "" {
+		note = time.Now().Format("2006-01-02 15:04:05")
 	}
 
 	if f.NoteEmoji {
 		// 随机生成一个emoji表情
 		emoji := []string{"👍", "👏", "👌", "👊", "✌", "👋", "👆", "👇", "👈", "👉", "👎", "👓", "👔", "👕", "👖", "👗", "👘", "👙", "👚", "👛", "👜", "👝", "👞", "👟", "👠", "👡", "👢", "👣", "👤", "👥", "👦", "👧", "👨", "👩", "👪", "👫", "👬", "👭", "👮", "👯", "👰", "👱", "👲", "👳", "👴", "👵", "👶", "👷", "👸", "👹", "👺", "👻", "👼", "👽", "👾", "👿", "💀", "💁", "💂", "💃", "💄", "💅", "💆", "💇", "💈", "💉", "💊", "💋", "💌", "💍", "💎", "💏", "💐", "💑", "💒", "💓", "💔", "💕", "💖", "💗", "💘", "💙", "💚", "💛", "💜", "💝", "💞", "💟", "💠", "💡", "💢", "💣", "💤", "💥", "💦", "💧", "💨", "💩", "💪", "💫", "💬", "💭", "💮", "💯", "💰", "💱", "💲", "💳", "💴", "💵"}
 		emojiIndex := rand.Intn(len(emoji))
-		f.Note = emoji[emojiIndex] + f.Note + emoji[emojiIndex]
+		note = emoji[emojiIndex] + note + emoji[emojiIndex]
 	}
-	elements = append(elements, CreateNoteElement(f.Note))
+	return note
+}
+
+// FormatMsg 构造一个统计消息卡片
+func FormatMsg(f *FeishuMsg) *Msg {
+	elements := make([]Element, 0)
+	
+	// 添加markdown内容
+	mdContent := f.buildMarkdownContent()
+	if mdContent != "" {
+		elements = append(elements, CreateMarkdownElement(mdContent))
+	}
+
+	// 添加备注
+	noteContent := f.buildNoteContent()
+	elements = append(elements, CreateNoteElement(noteContent))
 
 	return &Msg{
 		MsgType: "interactive",
@@ -220,33 +242,45 @@ func FormatMsg(f *FeishuMsg) *Msg {
 	}
 }
 
-// 发送消息
+// SendFeishuMsg 发送消息到飞书
 func SendFeishuMsg(hook string, f *FeishuMsg) error {
 	if hook == "" {
-		return fmt.Errorf("error hook url")
+		return fmt.Errorf("hook url is empty")
 	}
 
 	// 将消息内容转换为JSON格式
-	data, _ := json.Marshal(FormatMsg(f))
-
-	// 创建HTTP POST请求
-	req, _ := http.NewRequest("POST", hook, bytes.NewReader(data))
-	req.Header.Set("Content-Type", "application/json")
-
-	// 发送请求并打印响应结果
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	msg := FormatMsg(f)
+	data, err := json.Marshal(msg)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal message: %w", err)
 	}
 
+	// 创建HTTP POST请求
+	req, err := http.NewRequest("POST", hook, bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	
+	req.Header.Set("Content-Type", "application/json")
+
+	// 发送请求
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send request: %w", err)
+	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("request failed with status code %d", resp.StatusCode)
 	}
 
 	buf := new(bytes.Buffer)
-	_, _ = buf.ReadFrom(resp.Body)
+	_, err = buf.ReadFrom(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+	
 	f.Response = buf.String()
 	return nil
 }
