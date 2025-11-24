@@ -193,7 +193,14 @@ func (f *FeishuMsg) buildMarkdownContent() string {
 		}
 	} else if len(f.MarkdownItems) > 0 {
 		for _, item := range f.MarkdownItems {
-			md.WriteString(fmt.Sprintf("**%s**：%s\n", item.Tag, item.Content))
+			if item.Tag != "" {
+				// 如果有 Tag，则格式化为键值对形式
+				md.WriteString(fmt.Sprintf("**%s**：%s\n", item.Tag, item.Content))
+			} else {
+				// 如果没有 Tag，直接使用 Content
+				md.WriteString(item.Content)
+				md.WriteString("\n")
+			}
 		}
 	}
 

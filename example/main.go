@@ -22,11 +22,11 @@ func main() {
 	// 示例2: 使用新的 MarkdownItems 方式（保持顺序）
 	msgWithItems := &bot.FeishuMsg{
 		Title: "使用 MarkdownItems 的消息",
-		MarkdownItems: []bot.MarkdownItem{
-			{Tag: "markdown", Content: "**第一步**：初始化系统"},
-			{Tag: "markdown", Content: "**第二步**：加载配置文件"},
-			{Tag: "markdown", Content: "**第三步**：启动服务"},
-			{Tag: "markdown", Content: "**状态**：<font color='green'>成功</font>"},
+		MarkdownItems: []bot.Text{
+			{Tag: "第一步", Content: "初始化系统"},
+			{Tag: "第二步", Content: "加载配置文件"},
+			{Tag: "第三步", Content: "启动服务"},
+			{Tag: "状态", Content: "<font color='green'>成功</font>"},
 		},
 		Note:        "使用 MarkdownItems 保持固定顺序",
 		HeaderColor: bot.ColorGreen,
@@ -36,9 +36,9 @@ func main() {
 	msgFallback := &bot.FeishuMsg{
 		Title:    "回退机制示例",
 		Markdown: map[string]interface{}{}, // 空的 map
-		MarkdownItems: []bot.MarkdownItem{
-			{Tag: "markdown", Content: "**自动回退**：当 Markdown 为空时使用此内容"},
-			{Tag: "markdown", Content: "**优势**：解决了 JSON 序列化时 map 无序的问题"},
+		MarkdownItems: []bot.Text{
+			{Tag: "自动回退", Content: "当 Markdown 为空时使用此内容"},
+			{Tag: "优势", Content: "解决了 JSON 序列化时 map 无序的问题"},
 		},
 		Note:        "演示回退机制",
 		HeaderColor: bot.ColorYellow,

@@ -43,10 +43,10 @@ msg := &bot.FeishuMsg{
 ```go
 msg := &bot.FeishuMsg{
 	Title: "任务完成通知",
-	MarkdownItems: []bot.MarkdownItem{
-		{Tag: "markdown", Content: "**状态**：<font color='green'>成功</font>"},
-		{Tag: "markdown", Content: "**进度**：已完成 100%"},
-		{Tag: "markdown", Content: "**日志**：```日志内容```"},
+	MarkdownItems: []bot.Text{
+		{Tag: "状态", Content: "<font color='green'>成功</font>"},
+		{Tag: "进度", Content: "已完成 100%"},
+		{Tag: "日志", Content: "```日志内容```"},
 	},
 	Note: "点击查看详细日志",
 	NoteEmoji: true,
@@ -128,10 +128,10 @@ msg := &bot.FeishuMsg{
 
 // 解决方案：使用 MarkdownItems 保持固定顺序
 msg := &bot.FeishuMsg{
-	MarkdownItems: []bot.MarkdownItem{
-		{Tag: "markdown", Content: "**第一步**：开始"},
-		{Tag: "markdown", Content: "**第二步**：进行中"},
-		{Tag: "markdown", Content: "**第三步**：完成"},
+	MarkdownItems: []bot.Text{
+		{Tag: "第一步", Content: "开始"},
+		{Tag: "第二步", Content: "进行中"},
+		{Tag: "第三步", Content: "完成"},
 	},
 }
 ```
@@ -144,8 +144,8 @@ msg := &bot.FeishuMsg{
 msg := &bot.FeishuMsg{
 	Title: "自动回退示例",
 	Markdown: map[string]any{}, // 空的 map
-	MarkdownItems: []bot.MarkdownItem{
-		{Tag: "markdown", Content: "**自动使用**：MarkdownItems 内容"},
+	MarkdownItems: []bot.Text{
+		{Tag: "自动使用", Content: "MarkdownItems 内容"},
 	},
 }
 // 系统会自动使用 MarkdownItems 的内容
