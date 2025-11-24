@@ -172,25 +172,31 @@ const (
 )
 
 type FeishuMsg struct {
-	Title       string         `json:"title"`              // 标题
-	Markdown    map[string]any `json:"markdown"`           // 内容
-	Note        string         `json:"note"`               // 备注
-	NoteEmoji   bool           `json:"note_emoji"`         // 是否备注附带随机emoji表情
-	Link        string         `json:"link,omitempty"`     // 链接
-	HeaderColor FeishuColor    `json:"-"`                  // 标题颜色
-	Response    any            `json:"response,omitempty"` // 响应内容
+	Title         string         `json:"title"`                    // 标题
+	Markdown      map[string]any `json:"markdown,omitempty"`       // 内容 (map形式，可能无序)
+	MarkdownItems []Text         `json:"markdown_items,omitempty"` // 内容 (切片形式，保持顺序)
+	Note          string         `json:"note"`                     // 备注
+	NoteEmoji     bool           `json:"note_emoji"`               // 是否备注附带随机emoji表情
+	Link          string         `json:"link,omitempty"`           // 链接
+	HeaderColor   FeishuColor    `json:"-"`                        // 标题颜色
+	Response      any            `json:"response,omitempty"`       // 响应内容
 }
 
 // buildMarkdownContent 构建markdown内容字符串
 func (f *FeishuMsg) buildMarkdownContent() string {
-	if len(f.Markdown) == 0 {
-		return ""
-	}
-	
 	var md strings.Builder
-	for k, v := range f.Markdown {
-		md.WriteString(fmt.Sprintf("**%s**：%s\n", k, v))
+
+	// 优先使用 Markdown map，如果为空则使用 MarkdownItems
+	if len(f.Markdown) > 0 {
+		for k, v := range f.Markdown {
+			md.WriteString(fmt.Sprintf("**%s**：%s\n", k, v))
+		}
+	} else if len(f.MarkdownItems) > 0 {
+		for _, item := range f.MarkdownItems {
+			md.WriteString(fmt.Sprintf("**%s**：%s\n", item.Tag, item.Content))
+		}
 	}
+
 	return md.String()
 }
 
@@ -213,7 +219,7 @@ func (f *FeishuMsg) buildNoteContent() string {
 // FormatMsg 构造一个统计消息卡片
 func FormatMsg(f *FeishuMsg) *Msg {
 	elements := make([]Element, 0)
-	
+
 	// 添加markdown内容
 	mdContent := f.buildMarkdownContent()
 	if mdContent != "" {
@@ -260,7 +266,7 @@ func SendFeishuMsg(hook string, f *FeishuMsg) error {
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	req.Header.Set("Content-Type", "application/json")
 
 	// 发送请求
@@ -280,7 +286,7 @@ func SendFeishuMsg(hook string, f *FeishuMsg) error {
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
-	
+
 	f.Response = buf.String()
 	return nil
 }

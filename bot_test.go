@@ -32,3 +32,47 @@ func TestSendTxt(t *testing.T) {
 	SendFeishuMsg(Hook, TmplTestFeishu)
 	t.Log(TmplTestFeishu.Response)
 }
+
+func TestMarkdownItems(t *testing.T) {
+	// 测试使用 MarkdownItems 的情况
+	msg := &FeishuMsg{
+		Title: "测试 MarkdownItems",
+		MarkdownItems: []Text{
+			{Tag: "第一项", Content: "这是第一个有序项目"},
+			{Tag: "第二项", Content: "这是第二个有序项目"},
+			{Tag: "第三项", Content: "这是第三个有序项目"},
+		},
+		Note:        "使用 MarkdownItems 保持顺序",
+		HeaderColor: ColorGreen,
+	}
+
+	// 测试构建内容
+	content := msg.buildMarkdownContent()
+	expected := "**第一项**：这是第一个有序项目\n**第二项**：这是第二个有序项目\n**第三项**：这是第三个有序项目\n"
+	if content != expected {
+		t.Errorf("Expected:\n%s\nGot:\n%s", expected, content)
+	}
+
+	t.Log("MarkdownItems 测试通过")
+}
+
+func TestMarkdownFallback(t *testing.T) {
+	// 测试当 Markdown 为空时使用 MarkdownItems 的情况
+	msg := &FeishuMsg{
+		Title:    "测试回退机制",
+		Markdown: map[string]any{}, // 空的 map
+		MarkdownItems: []Text{
+			{Tag: "回退内容", Content: "当 Markdown 为空时使用此内容"},
+		},
+		Note:        "测试回退机制",
+		HeaderColor: ColorYellow,
+	}
+
+	content := msg.buildMarkdownContent()
+	expected := "**回退内容**：当 Markdown 为空时使用此内容\n"
+	if content != expected {
+		t.Errorf("Expected:\n%s\nGot:\n%s", expected, content)
+	}
+
+	t.Log("回退机制测试通过")
+}

@@ -24,6 +24,7 @@ var Hook = "https://open.feishu.cn/open-apis/bot/v2/hook/xxxx-xxxx-xxxx-xxxx"
 
 ### 2. 构建消息模板
 
+#### 方式一：使用 Map（传统方式）
 ```go
 msg := &bot.FeishuMsg{
 	Title: "任务完成通知",
@@ -31,6 +32,21 @@ msg := &bot.FeishuMsg{
 		"状态": "<font color='green'>成功</font>",
 		"进度": "已完成 100%",
 		"日志": "```日志内容```",
+	},
+	Note: "点击查看详细日志",
+	NoteEmoji: true,
+	Link: "http://example.com/logs",
+}
+```
+
+#### 方式二：使用 MarkdownItems（推荐，保持顺序）
+```go
+msg := &bot.FeishuMsg{
+	Title: "任务完成通知",
+	MarkdownItems: []bot.MarkdownItem{
+		{Tag: "markdown", Content: "**状态**：<font color='green'>成功</font>"},
+		{Tag: "markdown", Content: "**进度**：已完成 100%"},
+		{Tag: "markdown", Content: "**日志**：```日志内容```"},
 	},
 	Note: "点击查看详细日志",
 	NoteEmoji: true,
@@ -54,6 +70,8 @@ bot.SendFeishuMsg(Hook, msg)
 - [x] 超链接与@用户功能
 - [x] 代码块与列表渲染
 - [x] 支持Note备注和随机Emoji
+- [x] **新增**：MarkdownItems 切片支持，解决 map 转 JSON 无序问题
+- [x] **新增**：自动回退机制，当 Markdown 为空时使用 MarkdownItems
 
 ---
 
@@ -92,6 +110,45 @@ msg.HeaderColor = bot.ColorDefault // 默认主题
 
 ```go
 msg.Markdown["负责人"] = `<at id=user_123>张三</at>`
+```
+
+### 解决 JSON 序列化顺序问题
+
+使用 `MarkdownItems` 替代 `Markdown` map 来保证内容顺序：
+
+```go
+// 问题：map 在 JSON 序列化时顺序不固定
+msg := &bot.FeishuMsg{
+	Markdown: map[string]any{
+		"第三步": "完成",
+		"第一步": "开始", 
+		"第二步": "进行中",
+	},
+}
+
+// 解决方案：使用 MarkdownItems 保持固定顺序
+msg := &bot.FeishuMsg{
+	MarkdownItems: []bot.MarkdownItem{
+		{Tag: "markdown", Content: "**第一步**：开始"},
+		{Tag: "markdown", Content: "**第二步**：进行中"},
+		{Tag: "markdown", Content: "**第三步**：完成"},
+	},
+}
+```
+
+### 自动回退机制
+
+当 `Markdown` 字段为空时，系统会自动使用 `MarkdownItems`：
+
+```go
+msg := &bot.FeishuMsg{
+	Title: "自动回退示例",
+	Markdown: map[string]any{}, // 空的 map
+	MarkdownItems: []bot.MarkdownItem{
+		{Tag: "markdown", Content: "**自动使用**：MarkdownItems 内容"},
+	},
+}
+// 系统会自动使用 MarkdownItems 的内容
 ```
 
 ---
