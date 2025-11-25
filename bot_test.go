@@ -76,3 +76,60 @@ func TestMarkdownFallback(t *testing.T) {
 
 	t.Log("回退机制测试通过")
 }
+
+func TestMarkdownArray(t *testing.T) {
+	// 测试使用 MarkdownArray 的情况
+	msg := &FeishuMsg{
+		Title: "测试 MarkdownArray",
+		MarkdownArray: [][2]string{
+			{"第一项", "这是第一个有序项目"},
+			{"第二项", "这是第二个有序项目"},
+			{"第三项", "这是第三个有序项目"},
+		},
+		Note:        "使用 MarkdownArray 最简洁的方式",
+		HeaderColor: ColorBlue,
+	}
+
+	// 测试构建内容
+	content := msg.buildMarkdownContent()
+	expected := "**第一项**：这是第一个有序项目\n**第二项**：这是第二个有序项目\n**第三项**：这是第三个有序项目\n"
+	if content != expected {
+		t.Errorf("Expected:\n%s\nGot:\n%s", expected, content)
+	}
+
+	t.Log("MarkdownArray 测试通过")
+}
+
+func TestMarkdownPriority(t *testing.T) {
+	// 测试当前实现：同时支持多种格式
+	msg := &FeishuMsg{
+		Title: "测试多种格式同时使用",
+		Markdown: map[string]any{
+			"Map格式": "来自 Markdown map",
+		},
+		MarkdownItems: []Text{
+			{Tag: "Items格式", Content: "来自 MarkdownItems"},
+		},
+		MarkdownArray: [][2]string{
+			{"Array格式", "来自 MarkdownArray"},
+		},
+		Note:        "测试多种格式同时使用",
+		HeaderColor: ColorRed,
+	}
+
+	content := msg.buildMarkdownContent()
+	t.Logf("生成的内容:\n%s", content)
+
+	// 现在应该包含所有三种格式的内容
+	if !strings.Contains(content, "来自 Markdown map") {
+		t.Errorf("应该包含 Markdown 的内容")
+	}
+	if !strings.Contains(content, "来自 MarkdownItems") {
+		t.Errorf("应该包含 MarkdownItems 的内容")
+	}
+	if !strings.Contains(content, "来自 MarkdownArray") {
+		t.Errorf("应该包含 MarkdownArray 的内容")
+	}
+
+	t.Log("多格式同时使用测试通过")
+}

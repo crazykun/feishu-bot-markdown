@@ -19,6 +19,10 @@ go get github.com/crazykun/feishu-bot-markdown
 ### 1. 配置机器人Hook地址
 
 ```go
+import (
+	bot "github.com/crazykun/feishu-bot-markdown"
+)
+
 var Hook = "https://open.feishu.cn/open-apis/bot/v2/hook/xxxx-xxxx-xxxx-xxxx"
 ```
 
@@ -39,7 +43,7 @@ msg := &bot.FeishuMsg{
 }
 ```
 
-#### 方式二：使用 MarkdownItems（推荐，保持顺序）
+#### 方式二：使用 MarkdownItems（灵活，保持顺序）
 ```go
 msg := &bot.FeishuMsg{
 	Title: "任务完成通知",
@@ -47,6 +51,21 @@ msg := &bot.FeishuMsg{
 		{Tag: "状态", Content: "<font color='green'>成功</font>"},
 		{Tag: "进度", Content: "已完成 100%"},
 		{Tag: "日志", Content: "```日志内容```"},
+	},
+	Note: "点击查看详细日志",
+	NoteEmoji: true,
+	Link: "http://example.com/logs",
+}
+```
+
+#### 方式三：使用 MarkdownArray（推荐，最简洁）
+```go
+msg := &bot.FeishuMsg{
+	Title: "任务完成通知",
+	MarkdownArray: [][2]string{
+		{"状态", "<font color='green'>成功</font>"},
+		{"进度", "已完成 100%"},
+		{"日志", "```日志内容```"},
 	},
 	Note: "点击查看详细日志",
 	NoteEmoji: true,
@@ -71,7 +90,8 @@ bot.SendFeishuMsg(Hook, msg)
 - [x] 代码块与列表渲染
 - [x] 支持Note备注和随机Emoji
 - [x] **新增**：MarkdownItems 切片支持，解决 map 转 JSON 无序问题
-- [x] **新增**：自动回退机制，当 Markdown 为空时使用 MarkdownItems
+- [x] **新增**：MarkdownArray 键值对数组支持，提供最简洁的使用方式
+- [x] **新增**：智能优先级机制，支持多种内容格式自动选择
 
 ---
 
@@ -114,7 +134,7 @@ msg.Markdown["负责人"] = `<at id=user_123>张三</at>`
 
 ### 解决 JSON 序列化顺序问题
 
-使用 `MarkdownItems` 替代 `Markdown` map 来保证内容顺序：
+提供三种解决方案来保证内容顺序：
 
 ```go
 // 问题：map 在 JSON 序列化时顺序不固定
@@ -126,7 +146,7 @@ msg := &bot.FeishuMsg{
 	},
 }
 
-// 解决方案：使用 MarkdownItems 保持固定顺序
+// 解决方案1：使用 MarkdownItems（灵活）
 msg := &bot.FeishuMsg{
 	MarkdownItems: []bot.Text{
 		{Tag: "第一步", Content: "开始"},
@@ -134,22 +154,38 @@ msg := &bot.FeishuMsg{
 		{Tag: "第三步", Content: "完成"},
 	},
 }
+
+// 解决方案2：使用 MarkdownArray（最简洁，推荐）
+msg := &bot.FeishuMsg{
+	MarkdownArray: [][2]string{
+		{"第一步", "开始"},
+		{"第二步", "进行中"},
+		{"第三步", "完成"},
+	},
+}
 ```
 
-### 自动回退机制
+### 智能优先级机制
 
-当 `Markdown` 字段为空时，系统会自动使用 `MarkdownItems`：
+系统按以下优先级自动选择内容格式：**Markdown** > **MarkdownItems** > **MarkdownArray**
 
 ```go
 msg := &bot.FeishuMsg{
-	Title: "自动回退示例",
+	Title: "智能选择示例",
 	Markdown: map[string]any{}, // 空的 map
-	MarkdownItems: []bot.Text{
-		{Tag: "自动使用", Content: "MarkdownItems 内容"},
+	MarkdownItems: []bot.Text{}, // 空的切片
+	MarkdownArray: [][2]string{
+		{"自动使用", "MarkdownArray 内容"},
 	},
 }
-// 系统会自动使用 MarkdownItems 的内容
+// 系统会自动使用 MarkdownArray 的内容
 ```
+
+### 使用场景推荐
+
+- **MarkdownArray**: 简单键值对场景（推荐）
+- **MarkdownItems**: 需要混合键值对和纯内容的复杂场景
+- **Markdown**: 兼容现有代码，但顺序不固定
 
 ---
 

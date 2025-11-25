@@ -175,6 +175,7 @@ type FeishuMsg struct {
 	Title         string         `json:"title"`                    // 标题
 	Markdown      map[string]any `json:"markdown,omitempty"`       // 内容 (map形式，可能无序)
 	MarkdownItems []Text         `json:"markdown_items,omitempty"` // 内容 (切片形式，保持顺序)
+	MarkdownArray [][2]string    `json:"markdown_array,omitempty"` // 内容 (键值对数组形式，最简洁)
 	Note          string         `json:"note"`                     // 备注
 	NoteEmoji     bool           `json:"note_emoji"`               // 是否备注附带随机emoji表情
 	Link          string         `json:"link,omitempty"`           // 链接
@@ -183,15 +184,19 @@ type FeishuMsg struct {
 }
 
 // buildMarkdownContent 构建markdown内容字符串
+// 支持同时使用多种格式，按顺序输出：Markdown -> MarkdownItems -> MarkdownArray
 func (f *FeishuMsg) buildMarkdownContent() string {
 	var md strings.Builder
 
-	// 优先使用 Markdown map，如果为空则使用 MarkdownItems
+	// 1. 处理 Markdown map（可能无序）
 	if len(f.Markdown) > 0 {
 		for k, v := range f.Markdown {
 			md.WriteString(fmt.Sprintf("**%s**：%s\n", k, v))
 		}
-	} else if len(f.MarkdownItems) > 0 {
+	}
+
+	// 2. 处理 MarkdownItems（保持顺序，支持混合内容）
+	if len(f.MarkdownItems) > 0 {
 		for _, item := range f.MarkdownItems {
 			if item.Tag != "" {
 				// 如果有 Tag，则格式化为键值对形式
@@ -201,6 +206,13 @@ func (f *FeishuMsg) buildMarkdownContent() string {
 				md.WriteString(item.Content)
 				md.WriteString("\n")
 			}
+		}
+	}
+
+	// 3. 处理 MarkdownArray（最简洁的键值对）
+	if len(f.MarkdownArray) > 0 {
+		for _, arr := range f.MarkdownArray {
+			md.WriteString(fmt.Sprintf("**%s**：%s\n", arr[0], arr[1]))
 		}
 	}
 
