@@ -133,3 +133,196 @@ func TestMarkdownPriority(t *testing.T) {
 
 	t.Log("多格式同时使用测试通过")
 }
+
+// 测试卡片2.0 - 宽屏模式
+func TestCardV2WideScreen(t *testing.T) {
+	msg := &FeishuMsg{
+		Title:         "测试宽屏模式",
+		MarkdownArray: [][2]string{{"测试", "宽屏模式"}},
+		WideScreen:    true,
+		EnableForward: true,
+		HeaderColor:   ColorBlue,
+	}
+
+	card := FormatMsg(msg)
+
+	if card.Card.Config == nil {
+		t.Error("Config 不应该为 nil")
+	}
+
+	if !card.Card.Config.WideScreenMode {
+		t.Error("WideScreenMode 应该为 true")
+	}
+
+	if !card.Card.Config.EnableForward {
+		t.Error("EnableForward 应该为 true")
+	}
+
+	t.Log("卡片2.0宽屏模式测试通过")
+}
+
+// 测试卡片2.0 - 交互按钮
+func TestCardV2Actions(t *testing.T) {
+	msg := &FeishuMsg{
+		Title:         "测试交互按钮",
+		MarkdownArray: [][2]string{{"测试", "交互按钮"}},
+		Actions: []Action{
+			CreatePrimaryButtonElement("确认", "https://example.com"),
+			CreateButtonElement("取消", ""),
+		},
+		HeaderColor: ColorGreen,
+	}
+
+	card := FormatMsg(msg)
+
+	// 查找 action 元素
+	hasAction := false
+	for _, elem := range card.Card.Elements {
+		if elem.Tag == "action" && len(elem.Actions) > 0 {
+			hasAction = true
+			if len(elem.Actions) != 2 {
+				t.Errorf("应该有2个按钮，实际有 %d 个", len(elem.Actions))
+			}
+
+			// 检查第一个按钮类型
+			if elem.Actions[0].Type != "primary" {
+				t.Error("第一个按钮应该是 primary 类型")
+			}
+
+			// 检查第二个按钮类型
+			if elem.Actions[1].Type != "default" {
+				t.Error("第二个按钮应该是 default 类型")
+			}
+			break
+		}
+	}
+
+	if !hasAction {
+		t.Error("应该包含 action 元素")
+	}
+
+	t.Log("卡片2.0交互按钮测试通过")
+}
+
+// 测试卡片2.0 - 自定义图标
+func TestCardV2CustomIcon(t *testing.T) {
+	msg := &FeishuMsg{
+		Title:         "测试自定义图标",
+		MarkdownArray: [][2]string{{"测试", "自定义图标"}},
+		CustomIcon: &Icon{
+			Tag:   "standard_icon",
+			Token: "bell_outlined",
+		},
+		HeaderColor: ColorRed,
+	}
+
+	card := FormatMsg(msg)
+
+	if card.Card.Header.UdIcon == nil {
+		t.Error("UdIcon 不应该为 nil")
+	}
+
+	if card.Card.Header.UdIcon.Token != "bell_outlined" {
+		t.Errorf("图标Token应该是 bell_outlined，实际是 %s", card.Card.Header.UdIcon.Token)
+	}
+
+	t.Log("卡片2.0自定义图标测试通过")
+}
+
+// 测试卡片2.0 - 卡片链接
+func TestCardV2CardLink(t *testing.T) {
+	msg := &FeishuMsg{
+		Title:         "测试卡片链接",
+		MarkdownArray: [][2]string{{"测试", "卡片链接"}},
+		Link:          "https://www.feishu.cn",
+		HeaderColor:   ColorYellow,
+	}
+
+	card := FormatMsg(msg)
+
+	if card.Card.CardLink == nil {
+		t.Error("CardLink 不应该为 nil")
+	}
+
+	if card.Card.CardLink.Url != "https://www.feishu.cn" {
+		t.Errorf("卡片链接URL不正确，实际是 %s", card.Card.CardLink.Url)
+	}
+
+	t.Log("卡片2.0卡片链接测试通过")
+}
+
+// 测试创建图片元素
+func TestCreateImageElement(t *testing.T) {
+	imgKey := "img_v3_025h_xxxx"
+	elem := CreateImageElement(imgKey, "测试图片")
+
+	if elem.Tag != "img" {
+		t.Errorf("元素标签应该是 img，实际是 %s", elem.Tag)
+	}
+
+	if elem.ImgKey != imgKey {
+		t.Errorf("图片key不正确，实际是 %s", elem.ImgKey)
+	}
+
+	if elem.Alt == nil || elem.Alt.Content != "测试图片" {
+		t.Error("图片alt文本不正确")
+	}
+
+	t.Log("创建图片元素测试通过")
+}
+
+// 测试创建多列布局
+func TestCreateColumnSetElement(t *testing.T) {
+	columns := []Column{
+		CreateColumn("top", "第一列内容"),
+		CreateColumn("top", "第二列内容"),
+	}
+
+	elem := CreateColumnSetElement(columns, "bisect")
+
+	if elem.Tag != "column_set" {
+		t.Errorf("元素标签应该是 column_set，实际是 %s", elem.Tag)
+	}
+
+	if len(elem.Columns) != 2 {
+		t.Errorf("应该有2列，实际有 %d 列", len(elem.Columns))
+	}
+
+	if elem.FlexMode != "bisect" {
+		t.Errorf("FlexMode应该是 bisect，实际是 %s", elem.FlexMode)
+	}
+
+	t.Log("创建多列布局测试通过")
+}
+
+// 测试带确认弹窗的按钮
+func TestButtonWithConfirm(t *testing.T) {
+	action := Action{
+		Tag: "button",
+		Text: &Text{
+			Content: "删除",
+			Tag:     "plain_text",
+		},
+		Type: "danger",
+		Confirm: &Confirm{
+			Title: Text{
+				Content: "确认删除？",
+				Tag:     "plain_text",
+			},
+			Text: Text{
+				Content: "删除后不可恢复",
+				Tag:     "plain_text",
+			},
+		},
+	}
+
+	if action.Confirm == nil {
+		t.Error("Confirm 不应该为 nil")
+	}
+
+	if action.Confirm.Title.Content != "确认删除？" {
+		t.Error("确认标题不正确")
+	}
+
+	t.Log("带确认弹窗的按钮测试通过")
+}

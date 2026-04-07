@@ -11,7 +11,7 @@ import (
 )
 
 /**
- * @Description: 生成消息卡片
+ * @Description: 生成消息卡片（飞书卡片2.0）
  * 飞书消息卡片结构文档 https://open.feishu.cn/document/uAjLw4CM/ukzMukzMukzM/feishu-cards/card-json-structure
  * 卡片搭建工具 https://open.feishu.cn/cardkit
  * 卡片的正文内容，支持配置多语言。卡片的正文内容支持多种模块，包括多列布局、内容模块、分割线、图片、备注、交互模块等。
@@ -27,27 +27,39 @@ import (
 
 type any = interface{}
 
+// Msg 飞书消息结构
 type Msg struct {
 	MsgType string `json:"msg_type"`
 	Card    Card   `json:"card"`
 }
 
+// Text 文本对象
 type Text struct {
 	Content string `json:"content,omitempty"`
 	Tag     string `json:"tag"`
 }
 
+// Header 卡片头部
 type Header struct {
 	Title    Text   `json:"title"`
 	Template string `json:"template,omitempty"`
+	UdIcon   *Icon  `json:"ud_icon,omitempty"` // 自定义图标（卡片2.0新增）
 }
 
-type Card struct {
-	Elements []Element `json:"elements"`
-	Header   Header    `json:"header"`
-	CardLink CardLink  `json:"card_link,omitempty"`
+// Icon 图标对象
+type Icon struct {
+	Tag   string `json:"tag"`
+	Token string `json:"token"`
+	Color string `json:"color,omitempty"`
 }
 
+// Config 卡片全局配置（卡片2.0新增）
+type Config struct {
+	WideScreenMode bool `json:"wide_screen_mode,omitempty"` // 是否启用宽屏模式
+	EnableForward  bool `json:"enable_forward,omitempty"`   // 是否允许转发
+}
+
+// CardLink 卡片链接
 type CardLink struct {
 	Url        string `json:"url"`
 	AndroidUrl string `json:"android_url,omitempty"`
@@ -55,22 +67,68 @@ type CardLink struct {
 	PCUrl      string `json:"pc_url,omitempty"`
 }
 
+// Card 卡片主体
+type Card struct {
+	Config       *Config   `json:"config,omitempty"`         // 全局配置
+	Header       Header    `json:"header"`
+	Elements     []Element `json:"elements"`
+	CardLink     *CardLink `json:"card_link,omitempty"`      // 卡片链接
+	I18nElements *I18nElements `json:"i18n_elements,omitempty"` // 国际化元素
+}
+
+// I18nElements 国际化元素配置
+type I18nElements struct {
+	ZhCn *I18nElement `json:"zh_cn,omitempty"` // 中文
+	EnUs *I18nElement `json:"en_us,omitempty"` // 英文
+	JaJp *I18nElement `json:"ja_jp,omitempty"` // 日文
+}
+
+// I18nElement 单个语言的元素配置
+type I18nElement struct {
+	Elements []Element `json:"elements"`
+	Header   *Header   `json:"header,omitempty"`
+}
+
 // Column 表示卡片中多列布局中的一列。可以包含多个元素，例如文本、图片等
 type Column struct {
 	Tag           string    `json:"tag"`
-	Width         string    `json:"width"`
-	Weight        int       `json:"weight"`
+	Width         string    `json:"width,omitempty"`
+	Weight        int       `json:"weight,omitempty"`
 	Elements      []Element `json:"elements"`
 	VerticalAlign string    `json:"vertical_align,omitempty"`
+	Padding       *Padding  `json:"padding,omitempty"` // 内边距
+}
+
+// Padding 内边距配置
+type Padding struct {
+	Top    string `json:"top,omitempty"`
+	Right  string `json:"right,omitempty"`
+	Bottom string `json:"bottom,omitempty"`
+	Left   string `json:"left,omitempty"`
 }
 
 // Action 表示卡片中的一个交互组件，例如按钮、选择器等
 type Action struct {
-	Tag   string `json:"tag"`
+	Tag     string      `json:"tag"`
+	Text    *Text       `json:"text,omitempty"`
+	Url     string      `json:"url,omitempty"`
+	Type    string      `json:"type,omitempty"`
+	Value   any         `json:"value,omitempty"`
+	Confirm *Confirm    `json:"confirm,omitempty"` // 二次确认弹窗
+	Options []*Option   `json:"options,omitempty"` // 下拉选项
+}
+
+// Confirm 二次确认弹窗配置
+type Confirm struct {
+	Title Text    `json:"title"`
+	Text  Text    `json:"text"`
+}
+
+// Option 下拉选项
+type Option struct {
 	Text  Text   `json:"text"`
-	Url   string `json:"url"`
-	Type  string `json:"type"`
-	Value any    `json:"value"`
+	Value string `json:"value"`
+	Url   string `json:"url,omitempty"`
 }
 
 // Element 表示卡片中的一个元素，可以是多种类型，例如文本、图片、按钮等
@@ -84,6 +142,26 @@ type Element struct {
 	Columns           []Column  `json:"columns,omitempty"`
 	Actions           []Action  `json:"actions,omitempty"`
 	Elements          []Element `json:"elements,omitempty"`
+	
+	// 图片相关字段
+	ImgKey            string    `json:"img_key,omitempty"`
+	Alt               *Text     `json:"alt,omitempty"`
+	Title             *Text     `json:"title,omitempty"`
+	CustomWidth       string    `json:"custom_width,omitempty"`
+	CompactWidth      bool      `json:"compact_width,omitempty"`
+	Mode              string    `json:"mode,omitempty"`
+	
+	// 文本样式
+	Text              *Text     `json:"text,omitempty"`
+	Extra             *Element  `json:"extra,omitempty"`
+	Field             *Field    `json:"field,omitempty"`
+	IsShort           bool      `json:"is_short,omitempty"`
+}
+
+// Field 字段对象（用于div模块）
+type Field struct {
+	IsShort bool  `json:"is_short"`
+	Text    *Text `json:"text"`
 }
 
 // CreateMarkdownElement 构建一个 Markdown 元素，用于显示富文本内容
@@ -148,10 +226,58 @@ func CreateCenterColumn(align, content string) Column {
 	}
 }
 
+// CreateImageElement 构建一个图片元素
+func CreateImageElement(imgKey, alt string) Element {
+	return Element{
+		Tag:    "img",
+		ImgKey: imgKey,
+		Alt: &Text{
+			Content: alt,
+			Tag:     "plain_text",
+		},
+	}
+}
+
+// CreateButtonElement 构建一个按钮元素
+func CreateButtonElement(text, url string) Action {
+	return Action{
+		Tag: "button",
+		Text: &Text{
+			Content: text,
+			Tag:     "plain_text",
+		},
+		Url:  url,
+		Type: "default",
+	}
+}
+
+// CreatePrimaryButtonElement 构建一个主按钮元素
+func CreatePrimaryButtonElement(text, url string) Action {
+	return Action{
+		Tag: "button",
+		Text: &Text{
+			Content: text,
+			Tag:     "plain_text",
+		},
+		Url:  url,
+		Type: "primary",
+	}
+}
+
 // Hr 构建一个模块之间的分割线
 func Hr() Element {
 	return Element{
 		Tag: "hr",
+	}
+}
+
+// CreateColumnSetElement 构建一个多列布局元素
+func CreateColumnSetElement(columns []Column, flexMode string) Element {
+	return Element{
+		Tag:               "column_set",
+		FlexMode:          flexMode,
+		HorizontalSpacing: "default",
+		Columns:           columns,
 	}
 }
 
@@ -181,6 +307,13 @@ type FeishuMsg struct {
 	Link          string         `json:"link,omitempty"`           // 链接
 	HeaderColor   FeishuColor    `json:"-"`                        // 标题颜色
 	Response      any            `json:"response,omitempty"`       // 响应内容
+	
+	// 卡片2.0新增字段
+	WideScreen    bool           `json:"-"`                        // 是否启用宽屏模式
+	EnableForward bool           `json:"-"`                        // 是否允许转发
+	CustomIcon    *Icon          `json:"-"`                        // 自定义图标
+	Actions       []Action       `json:"-"`                        // 交互组件（按钮等）
+	Images        []string       `json:"-"`                        // 图片列表（img_key）
 }
 
 // buildMarkdownContent 构建markdown内容字符串
@@ -235,7 +368,7 @@ func (f *FeishuMsg) buildNoteContent() string {
 	return note
 }
 
-// FormatMsg 构造一个统计消息卡片
+// FormatMsg 构造一个统计消息卡片（飞书卡片2.0）
 func FormatMsg(f *FeishuMsg) *Msg {
 	elements := make([]Element, 0)
 
@@ -245,24 +378,63 @@ func FormatMsg(f *FeishuMsg) *Msg {
 		elements = append(elements, CreateMarkdownElement(mdContent))
 	}
 
+	// 添加图片（如果有）
+	if len(f.Images) > 0 {
+		for _, imgKey := range f.Images {
+			elements = append(elements, CreateImageElement(imgKey, "图片"))
+		}
+	}
+
+	// 添加交互组件（如果有）
+	if len(f.Actions) > 0 {
+		elements = append(elements, Element{
+			Tag:     "action",
+			Actions: f.Actions,
+		})
+	}
+
 	// 添加备注
 	noteContent := f.buildNoteContent()
 	elements = append(elements, CreateNoteElement(noteContent))
 
+	// 构建卡片链接
+	var cardLink *CardLink
+	if f.Link != "" {
+		cardLink = &CardLink{
+			Url: f.Link,
+		}
+	}
+
+	// 构建全局配置
+	var config *Config
+	if f.WideScreen || f.EnableForward {
+		config = &Config{
+			WideScreenMode: f.WideScreen,
+			EnableForward:  f.EnableForward,
+		}
+	}
+
+	// 构建头部
+	header := Header{
+		Title: Text{
+			Content: f.Title,
+			Tag:     "plain_text",
+		},
+		Template: string(f.HeaderColor),
+	}
+	
+	// 添加自定义图标（如果有）
+	if f.CustomIcon != nil {
+		header.UdIcon = f.CustomIcon
+	}
+
 	return &Msg{
 		MsgType: "interactive",
 		Card: Card{
+			Config:   config,
+			Header:   header,
 			Elements: elements,
-			Header: Header{
-				Title: Text{
-					Content: f.Title,
-					Tag:     "plain_text",
-				},
-				Template: string(f.HeaderColor),
-			},
-			CardLink: CardLink{
-				Url: f.Link,
-			},
+			CardLink: cardLink,
 		},
 	}
 }
